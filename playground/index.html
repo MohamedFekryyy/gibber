@@ -3,6 +3,8 @@
   <head>
     <meta charset='utf-8'>
     <title>Gibber</title>
+    <!-- Google Fonts - IBM Plex Sans -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
     <!-- tern + codemirror -->
     <!--<link rel="stylesheet" href="../node_modules/codemirror/addon/hint/show-hint.css">-->
     <!--<link rel="stylesheet" href="../node_modules/codemirror/addon/dialog/dialog.css">-->
@@ -16,62 +18,1281 @@
     <link rel="stylesheet" href="./gibber.css">
     <link rel="icon" href="data:,">
 
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <!--<script src='./gibberwocky.js'></script>-->
     <script src='./bundle.js'></script>
     <script src='./jsdsp.js'></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js" crossorigin></script>
     <!--<script src='../external/babel.min.js'></script>-->
+    
+    <!-- Gibber SaaS Extensions -->
+    <script src='./supabase.js'></script>
+    <script src='./auth.js'></script>
   </head>
 
   <body>
-
     <canvas id='metronome'></canvas>
+    
+    <!-- Simplified header with only logo -->
     <header>
       <h1>gibber</h1>
-
-      <select id='examplesMenu'></select>
-
-      <img id='themer' src='./resources/themes/soyuz.png'></img>
-      <div id='thememenu'>
-        <ul>
-          <li><img src='./resources/themes/apollo.png' /></li>
-          <li><img src='./resources/themes/battlestation.png' /></li>
-          <li><img src='./resources/themes/lotus.png' /></li>
-          <li><img src='./resources/themes/marble.png' /></li>
-          <li><img src='./resources/themes/murata.png' /></li>
-          <li><img src='./resources/themes/ninetynine.png' /></li>
-          <li><img src='./resources/themes/noir.png' /></li>
-          <li><img src='./resources/themes/nord.png' /></li>
-          <li><img src='./resources/themes/sonicpi.png' /></li>
-          <li><img src='./resources/themes/soyuz.png' /></li>
-          <li><img src='./resources/themes/zenburn.png' /></li>
-        </ul>
-      </div>
-
-      <button id='sharebtn'>share</button>
-      <button id='connect'>gabber</button>
-      <button id='restart'>restart engine</button>
-
-      <span id='reference'>
-        <ul>
-          <li><a target='_blank' href='./docs/index.html'>reference</a></li>
-          <li><a target='_blank' href='https://github.com/gibber-cc/gibber'>source code</a></li>
-          <li><a target='_blank' href='https://discord.gg/REawtZZbQv'>discord</a></li>
-          <!--<li><a target='_blank' href='https://forum.toplap.org/c/communities/gibber/16'>forum</a></li>-->
-          <li><a target='_blank' href='https://twitter.com/gibber_cc'>twitter</a></li>
-        </ul>
-      </span>
+      <!-- Login button will be added by auth.js -->
     </header>
+
+    <!-- Floating Controls Bar at Top Center -->
+    <div id="top-controls">
+      <div class="bpm-control">
+        <span class="control-label">BPM</span>
+        <button id="bpm-decrease">-</button>
+        <input type="number" id="bpm-value" min="60" max="340" value="130" step="1">
+        <button id="bpm-increase">+</button>
+      </div>
+      <button id="play-button">
+        <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" class="button-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="6" y="4" width="4" height="16"></rect>
+          <rect x="14" y="4" width="4" height="16"></rect>
+        </svg>
+        <span class="button-text">Play All</span>
+      </button>
+      <button id="clear-button">
+        <svg xmlns="http://www.w3.org/2000/svg" class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        <span class="button-text">Clear</span>
+      </button>
+    </div>
+    
+    
 
     <div id='editor'></div>
 
-    <button id='hidebtn'>&#9650;</button>
+    <!-- Instrument buttons -->
+    <div class="instrument-buttons" id="instrument-buttons" style="position: fixed; z-index: 9999; top: 100px; left: 50px; display: flex; background: rgba(30, 30, 40, 0.8); border-radius: 20px; padding: 5px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+      <button class="instrument-button drum-button" title="Insert Drums" data-snippet="// === Drums ===
+drums = Drums()
+drums.tidal('kd*4, sd*2, ch*8')
+drums.gain = 0.9" style="width: 30px; height: 30px; margin: 0 3px; border-radius: 15px; border: none; background-color: rgba(50, 50, 60, 0.8);"></button>
+      <button class="instrument-button pad-button" title="Insert Pad Synth" data-snippet="// === Pad ===
+pad = Synth({ waveform:'saw', attack:ms(2000), decay:ms(1000), sustain:0.6, release:ms(4000) })
+pad.note.seq(['C4', 'Am', 'F4', 'G4'], 2)" style="width: 30px; height: 30px; margin: 0 3px; border-radius: 15px; border: none; background-color: rgba(50, 50, 60, 0.8);"></button>
+      <button class="instrument-button synth-button" title="Insert Synth" data-snippet="// === Synth ===
+synth = Mono('bass.hollow')
+synth.note.seq([0, 4, 7, -2], 1/8)" style="width: 30px; height: 30px; margin: 0 3px; border-radius: 15px; border: none; background-color: rgba(50, 50, 60, 0.8);"></button>
+      <button class="instrument-button percussion-button" title="Insert Percussion" data-snippet="// === Percussion ===
+perc = FM({ feedback:0.1, decay:1/4 })
+perc.note.seq(Euclid(3,8), 1/8)" style="width: 30px; height: 30px; margin: 0 3px; border-radius: 15px; border: none; background-color: rgba(50, 50, 60, 0.8);"></button>
+    </div>
+
 
     <canvas id='graphics'></canvas>
-    <!--<div id='console'>-->
-    <!--  <div id='splitbar'></div>-->
-    <!--  <div id='main'></div> -->
-    <!--</div>-->
+    
+    <!-- Music Visualization Timeline -->
+    <div id="timeline-visualization" class="timeline-container">
+      <div class="timeline-header">Timeline</div>
+      <div class="timeline-content"></div>
+    </div>
+    
+    <!-- New pill-shaped footer toolbar -->
+    <footer id="main-toolbar">
+      <!-- Custom Examples Dropdown Menu -->
+      <div id="examples-dropdown">
+        <button id="examples-dropdown-btn">
+          <span id="selected-example">demos</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div id="examples-dropdown-content">
+          <!-- Demo examples -->
+          <div class="dropdown-category">
+            <h3>demos</h3>
+            <div class="dropdown-items">
+              <div class="dropdown-item" data-file="newintro.js">
+                <span class="checkmark">✓</span>
+                <span>intro</span>
+              </div>
+              <div class="dropdown-item" data-file="fractal_fun.js">
+                <span>fractal fun</span>
+              </div>
+              <div class="dropdown-item" data-file="picksomesamples.js">
+                <span>pick your sample</span>
+              </div>
+              <div class="dropdown-item" data-file="acid.js">
+                <span>acid</span>
+              </div>
+              <div class="dropdown-item" data-file="intro.js">
+                <span>moody</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- General tutorials -->
+          <div class="dropdown-category">
+            <h3>general tutorials</h3>
+            <div class="dropdown-items">
+              <div class="dropdown-item" data-file="intro.tutorial.js">
+                <span>1. running/stopping code</span>
+              </div>
+              <div class="dropdown-item" data-file="console.js">
+                <span>2. using the console</span>
+              </div>
+              <div class="dropdown-item" data-file="creating.objects.js">
+                <span>3. creating objects</span>
+              </div>
+              <div class="dropdown-item" data-file="sequencing.js">
+                <span>4. basic sequencing</span>
+              </div>
+              <div class="dropdown-item" data-file="keymappings.js">
+                <span>5. key commands</span>
+              </div>
+              <div class="dropdown-item" data-file="pattern.js">
+                <span>6. patterns</span>
+              </div>
+              <div class="dropdown-item" data-file="random.js">
+                <span>7. randomness</span>
+              </div>
+              <div class="dropdown-item" data-file="tidal.js">
+                <span>8. tidalcycles</span>
+              </div>
+              <div class="dropdown-item" data-file="modulation.js">
+                <span>9. modulation</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Music tutorials -->
+          <div class="dropdown-category">
+            <h3>music tutorials</h3>
+            <div class="dropdown-items">
+              <div class="dropdown-item" data-file="scales.tunings.js">
+                <span>scales/tunings</span>
+              </div>
+              <div class="dropdown-item" data-file="arp.js">
+                <span>arpeggios and signals</span>
+              </div>
+              <div class="dropdown-item" data-file="polyphony.js">
+                <span>polyphony</span>
+              </div>
+              <div class="dropdown-item" data-file="freesound.js">
+                <span>freesound</span>
+              </div>
+              <div class="dropdown-item" data-file="sampler.js">
+                <span>samplers</span>
+              </div>
+              <div class="dropdown-item" data-file="steps.js">
+                <span>step sequencing</span>
+              </div>
+              <div class="dropdown-item" data-file="soundfont.js">
+                <span>using soundfonts</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Sound design tutorials -->
+          <div class="dropdown-category">
+            <h3>sound design tutorials</h3>
+            <div class="dropdown-items">
+              <div class="dropdown-item" data-file="sounddesign_oscillators.js">
+                <span>oscillators</span>
+              </div>
+              <div class="dropdown-item" data-file="sounddesign_envelopes.js">
+                <span>envelopes</span>
+              </div>
+              <div class="dropdown-item" data-file="sounddesign_filters.js">
+                <span>filters</span>
+              </div>
+              <div class="dropdown-item" data-file="effects.js">
+                <span>effects and busses</span>
+              </div>
+              <div class="dropdown-item" data-file="monosynth.js">
+                <span>understanding the monosynth</span>
+              </div>
+              <div class="dropdown-item" data-file="make.js">
+                <span>creating synths</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Advanced programming tutorials -->
+          <div class="dropdown-category">
+            <h3>advanced programming tutorials</h3>
+            <div class="dropdown-items">
+              <div class="dropdown-item" data-file="patternfilters.js">
+                <span>pattern filters</span>
+              </div>
+              <div class="dropdown-item" data-file="multithreaded.js">
+                <span>multithreaded programming</span>
+              </div>
+              <div class="dropdown-item" data-file="temporalrecursion.js">
+                <span>temporal recursions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Hidden original select element for compatibility -->
+      <select id='examplesMenu' style="display: none;"></select>
+
+      <button id='restart' class="dim-button">restart engine</button>
+      <!-- Save/load buttons will be added here by environment.js -->
+    </footer>
+    
+    <style>
+      /* Add this to the existing CSS or create a new style tag */
+      /* Floating top controls */
+      #top-controls {
+        position: fixed;
+        top: 32px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9000;
+        display: flex;
+        background: rgba(20, 20, 25, 0.9);
+        border-radius: 30px;
+        padding: 8px 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(60, 60, 80, 0.4);
+        align-items: center;
+      }
+      
+      /* Make sure editor doesn't get obscured by floating controls */
+      #editor {
+        margin-top: 120px;
+      }
+      
+      /* BPM Controls */
+      .bpm-control {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+      }
+      
+      .control-label {
+        font-size: 12px;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-right: 10px;
+      }
+      
+      #bpm-value {
+        width: 60px;
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 16px;
+        padding: 4px 8px;
+        text-align: center;
+        font-weight: bold;
+        -moz-appearance: textfield;
+      }
+      
+      #bpm-value::-webkit-inner-spin-button, 
+      #bpm-value::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+      
+      #bpm-decrease, #bpm-increase {
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(40, 40, 50, 0.7);
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+        margin: 0 5px;
+      }
+      
+      #bpm-decrease:hover, #bpm-increase:hover {
+        background: rgba(60, 60, 80, 0.8);
+      }
+      
+      #bpm-decrease:active, #bpm-increase:active {
+        background: rgba(80, 80, 100, 0.9);
+        transform: scale(0.95);
+      }
+      
+      /* Clear button styling */
+      #clear-button {
+        background: linear-gradient(to bottom, #9a50b0, #7040a0);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-left: 5px;
+        display: flex;
+        align-items: center;
+      }
+      
+      #clear-button:hover {
+        background: linear-gradient(to bottom, #a060c0, #805ab0);
+      }
+      
+      #clear-button:active {
+        background: linear-gradient(to bottom, #804090, #603080);
+        transform: scale(0.95);
+      }
+      
+      /* Play button styling */
+      #play-button {
+        background: linear-gradient(to bottom, #50a050, #407040);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-right: 5px;
+        display: flex;
+        align-items: center;
+      }
+      
+      #play-button:hover {
+        background: linear-gradient(to bottom, #60b060, #508050);
+      }
+      
+      #play-button:active {
+        background: linear-gradient(to bottom, #409040, #306030);
+        transform: scale(0.95);
+      }
+      
+      #play-button.running {
+        background: linear-gradient(to bottom, #a05050, #703030);
+      }
+      
+      #play-button.running:hover {
+        background: linear-gradient(to bottom, #b06060, #804040);
+      }
+      
+      #play-button.running:active {
+        background: linear-gradient(to bottom, #903030, #602020);
+      }
+      
+      /* Button icons */
+      .button-icon {
+        width: 16px;
+        height: 16px;
+        margin-right: 6px;
+        stroke-width: 2.5;
+      }
+      
+      .hidden {
+        display: none;
+      }
+      
+      .button-text {
+        position: relative;
+        top: 1px;
+      }
+      
+      /* Custom Examples Dropdown Styling */
+      #examples-dropdown {
+        position: relative;
+      }
+      
+      #examples-dropdown-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        min-width: 120px;
+        color: white;
+        background: rgba(40, 40, 50, 0.8);
+        border: 1px solid rgba(80, 80, 100, 0.6);
+        border-radius: 15px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+      }
+      
+      #examples-dropdown-btn:hover {
+        background: rgba(60, 60, 80, 0.9);
+      }
+      
+      #examples-dropdown-content {
+        position: absolute;
+        bottom: 100%; /* Position above the button */
+        left: 0;
+        margin-bottom: 5px; /* Add space between button and dropdown */
+        min-width: 320px;
+        max-width: 500px;
+        max-height: 70vh;
+        overflow-y: auto;
+        background: rgba(30, 30, 40, 0.95);
+        border-radius: 12px;
+        padding: 12px;
+        z-index: 9999;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(80, 80, 100, 0.6);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.25s cubic-bezier(0.3, 0, 0.2, 1);
+      }
+      
+      #examples-dropdown-btn:focus + #examples-dropdown-content,
+      #examples-dropdown-content:hover,
+      #examples-dropdown-content.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+      
+      .dropdown-category {
+        margin-bottom: 15px;
+      }
+      
+      .dropdown-category h3 {
+        color: #aaa;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0 0 10px 0;
+        padding-bottom: 5px;
+        border-bottom: 1px solid rgba(100, 100, 120, 0.4);
+      }
+      
+      .dropdown-items {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      
+      .dropdown-item {
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+      }
+      
+      .dropdown-item:hover {
+        background: rgba(60, 60, 80, 0.8);
+      }
+      
+      .dropdown-item .checkmark {
+        display: inline-block;
+        width: 16px;
+        margin-right: 8px;
+        color: #66bb66;
+        font-weight: bold;
+      }
+      
+      /* Quick insert instruments buttons */
+      .instrument-buttons {
+        position: absolute;
+        display: none;
+        background: rgba(30, 30, 40, 0.8);
+        border-radius: 20px;
+        padding: 5px;
+        z-index: 1000;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(80, 80, 100, 0.4);
+      }
+      
+      .instrument-button {
+        width: 30px;
+        height: 30px;
+        margin: 0 3px;
+        border-radius: 15px;
+        border: none;
+        background-size: 60%;
+        background-position: center;
+        background-repeat: no-repeat;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        outline: none;
+        background-color: rgba(50, 50, 60, 0.8);
+      }
+      
+      .instrument-button:hover {
+        transform: scale(1.15);
+        background-color: rgba(70, 70, 90, 0.8);
+      }
+      
+      .drum-button {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.5 2 2 3.8 2 6v12c0 2.2 4.5 4 10 4s10-1.8 10-4V6c0-2.2-4.5-4-10-4zM4 6c0-.6 3.5-2 8-2s8 1.4 8 2-3.5 2-8 2-8-1.4-8-2zm16 12c0 .6-3.5 2-8 2s-8-1.4-8-2v-2c1.8.8 4.7 1.5 8 1.5s6.2-.7 8-1.5v2zm0-5c0 .6-3.5 2-8 2s-8-1.4-8-2v-2c1.8.8 4.7 1.5 8 1.5s6.2-.7 8-1.5v2z"/></svg>');
+      }
+      
+      .pad-button {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 5h-2v2h2v2h-2v2h2v2h-2v2h-2v-2h-2v2H9v-2H7v-2h2v-2H7v-2h2V7h2v2h2V7h2v2zm-5 4h-2v2h2v-2zm2 0h2v-2h-2v2z"/></svg>');
+      }
+      
+      .synth-button {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 20c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-9 7h2v2h-2V9zm0 3h2v2h-2v-2zM8 9h2v2H8V9zm0 3h2v2H8v-2zm-1 6h10v-6H7v6zm9-12h2v2h-2V6zm0 3h2v2h-2V9zm0 3h2v2h-2v-2zm3-6h2v2h-2V6zm0 3h2v2h-2V9zm0 3h2v2h-2v-2z"/></svg>');
+      }
+      
+      .percussion-button {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M14.5 9.5C15.88 9.5 17 8.38 17 7s-1.12-2.5-2.5-2.5S12 5.62 12 7s1.12 2.5 2.5 2.5zM9.74 15.96l-1.41 1.41-.71-.71.35-.35c.98-.98.98-2.56 0-3.54-.49-.49-1.13-.73-1.77-.73-.64 0-1.28.24-1.77.73-.98.98-.98 2.56 0 3.54l.35.35-1.06 1.06c-.98.98-.98 2.56 0 3.54.5.5 1.14.74 1.78.74s1.28-.24 1.77-.73l1.06-1.06 1.41 1.41 1.41-1.41-1.41-1.41 1.41-1.41-1.41-1.43zm-5.66.14c0-.38.14-.74.42-1.01.57-.57 1.44-.58 2.01 0l.18.18-2.61 2.6-.18-.18c-.56-.56-.56-1.41.18-1.59zm7.42 3.9c0-.39.15-.76.44-1.06.58-.58 1.45-.58 2.03 0 .58.58.58 1.45 0 2.03-.58.58-1.45.58-2.03 0-.29-.3-.44-.67-.44-1.06v.09zm-.44-5.04c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1m6 5c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1m0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1m-6-5c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1m7 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1"/></svg>');
+      }
+      
+      /* Pill-shaped footer toolbar styles */
+      footer#main-toolbar { 
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: auto;
+        height: 2em; 
+        padding: 0 1em;
+        box-sizing: border-box;
+        z-index: 20; /* Ensure it's above other elements */
+        background: var(--background);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 20px;
+        border: 1px solid var(--f_med);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+      
+      footer#main-toolbar button,
+      footer#main-toolbar select {
+        margin: 0 2px;
+        font-size: 12px;
+        padding: 2px 8px;
+      }
+      
+      /* Dimmed button style */
+      .dim-button {
+        opacity: 0.6;
+        font-size: 11px !important;
+        color: var(--f_low) !important;
+        border-color: var(--f_low) !important;
+        transition: opacity 0.2s ease;
+      }
+      
+      .dim-button:hover {
+        opacity: 0.9;
+      }
+      
+      /* Floating Icon Selector */
+      #icon-selector {
+        position: fixed;
+        top: 130px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9000;
+        display: flex;
+        background: rgba(20, 20, 25, 0.9);
+        border-radius: 50px;
+        padding: 8px;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(60, 60, 80, 0.4);
+      }
+      
+      .icon-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin: 0 8px;
+        cursor: pointer;
+      }
+      
+      .icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(40, 40, 50, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        color: white;
+        font-size: 20px;
+      }
+      
+      .icon-item:hover .icon {
+        background: rgba(60, 60, 80, 0.8);
+      }
+      
+      .icon-label {
+        position: absolute;
+        left: 50px;
+        background: rgba(40, 40, 50, 0.9);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        opacity: 0;
+        transform: translateX(-10px);
+        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1.0);
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      
+      .icon-item:hover .icon-label {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      
+      /* Icons */
+      .database-icon {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.5 2 2 3.8 2 6v12c0 2.2 4.5 4 10 4s10-1.8 10-4V6c0-2.2-4.5-4-10-4zM4 6c0-.6 3.5-2 8-2s8 1.4 8 2-3.5 2-8 2-8-1.4-8-2zm16 12c0 .6-3.5 2-8 2s-8-1.4-8-2v-2c1.8.8 4.7 1.5 8 1.5s6.2-.7 8-1.5v2zm0-5c0 .6-3.5 2-8 2s-8-1.4-8-2v-2c1.8.8 4.7 1.5 8 1.5s6.2-.7 8-1.5v2z"/></svg>');
+        background-size: 24px;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      
+      .grid-icon {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg>');
+        background-size: 24px;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      
+      .dots-icon {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 16c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-7 12c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm14 12c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>');
+        background-size: 24px;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      
+      .random-icon {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M17.66 9.53l-7.07 7.07-4.24-4.24 1.41-1.41 2.83 2.83 5.66-5.66 1.41 1.41zM4 12c0-2.33 1.02-4.42 2.62-5.88L9 8.5v-6H3l2.2 2.2C3.24 6.52 2 9.11 2 12c0 5.19 3.95 9.45 9 9.95v-2.02c-3.94-.49-7-3.86-7-7.93zm18 0c0-5.19-3.95-9.45-9-9.95v2.02c3.94.49 7 3.86 7 7.93 0 2.33-1.02 4.42-2.62 5.88L15 15.5v6h6l-2.2-2.2c1.96-1.82 3.2-4.41 3.2-7.3z"/></svg>');
+        background-size: 24px;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      
+      /* Timeline Visualization Styling */
+      .timeline-container {
+        position: absolute;
+        right: 0;
+        top: 40px; /* Position below header */
+        width: 200px;
+        height: calc(100vh - 80px); /* Full height minus header and footer */
+        background: #1a1a1a;
+        border-left: 1px solid #333;
+        overflow: hidden;
+        transition: width 0.3s ease;
+        z-index: 10;
+      }
+      
+      .timeline-header {
+        padding: 10px;
+        font-size: 14px;
+        border-bottom: 1px solid #333;
+        color: #eee;
+      }
+      
+      .timeline-content {
+        height: calc(100% - 35px);
+        overflow-y: auto;
+        position: relative;
+      }
+      
+      .timeline-lane {
+        padding: 10px;
+        margin-bottom: 1px;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.3s ease, transform 0.2s ease;
+      }
+      
+      .timeline-lane:hover {
+        opacity: 1;
+        transform: translateX(-5px);
+      }
+      
+      .timeline-lane.active {
+        opacity: 1;
+        border-left: 3px solid #fff;
+      }
+      
+      .timeline-lane.muted {
+        opacity: 0.3;
+      }
+      
+      .lane-name {
+        font-size: 12px;
+        margin-bottom: 5px;
+        color: white;
+        font-weight: bold;
+      }
+      
+      .lane-pattern {
+        height: 20px;
+        position: relative;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      
+      .pattern-event {
+        position: absolute;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 1px;
+      }
+      
+      /* Make the editor adjust for the timeline */
+      #editor {
+        width: calc(100% - 200px);
+      }
+    </style>
+    <script>
+      // Initialize Gibber SaaS features after the page loads
+      window.addEventListener('DOMContentLoaded', () => {
+        // Initialize authentication system
+        if (window.GibberAuth) {
+          window.GibberAuth.init();
+        }
+        
+        // Set up custom dropdown behavior
+        const examplesDropdownBtn = document.getElementById('examples-dropdown-btn');
+        const examplesDropdownContent = document.getElementById('examples-dropdown-content');
+        
+        if (examplesDropdownBtn && examplesDropdownContent) {
+          examplesDropdownBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            examplesDropdownContent.classList.toggle('active');
+          });
+          
+          // Close dropdown when clicking outside
+          document.addEventListener('click', (e) => {
+            if (!examplesDropdownBtn.contains(e.target) && !examplesDropdownContent.contains(e.target)) {
+              examplesDropdownContent.classList.remove('active');
+            }
+          });
+          
+          // Ensure dropdown items work correctly
+          const dropdownItems = document.querySelectorAll('.dropdown-item');
+          dropdownItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+              const fileName = item.getAttribute('data-file');
+              if (fileName) {
+                // Update the selected text display
+                const selectedExampleText = document.getElementById('selected-example');
+                if (selectedExampleText) {
+                  selectedExampleText.textContent = item.querySelector('span:not(.checkmark)').textContent;
+                }
+                
+                // Load the example file content
+                loadExample(fileName);
+                
+                // Add checkmark
+                document.querySelectorAll('.dropdown-item .checkmark').forEach(check => {
+                  check.textContent = '';
+                });
+                const checkmark = item.querySelector('.checkmark');
+                if (checkmark) {
+                  checkmark.textContent = '✓';
+                } else {
+                  const newCheck = document.createElement('span');
+                  newCheck.className = 'checkmark';
+                  newCheck.textContent = '✓';
+                  item.prepend(newCheck);
+                }
+                
+                // Close the dropdown after selection
+                setTimeout(() => {
+                  examplesDropdownContent.classList.remove('active');
+                }, 200);
+              }
+            });
+          });
+          
+          // Function to load example files
+          function loadExample(filename) {
+            console.log('Loading example:', filename);
+            const req = new XMLHttpRequest();
+            req.open('GET', './examples/' + filename, true);
+            req.onload = function() {
+              if (req.status >= 200 && req.status < 400) {
+                const js = req.responseText;
+                
+                // Get the editor instance from Gibber environment
+                let editor = null;
+                if (window.Gibber && window.Gibber.Environment) {
+                  editor = window.Gibber.Environment.codeEditor || 
+                           window.Gibber.Environment.cm || 
+                           (document.querySelector('.CodeMirror') && document.querySelector('.CodeMirror').CodeMirror);
+                }
+                
+                if (editor) {
+                  // Set the value in the editor
+                  editor.setValue(js);
+                  
+                  // Focus on the editor
+                  editor.focus();
+                  
+                  console.log('Example loaded successfully');
+                } else {
+                  console.error('Editor not found');
+                }
+              } else {
+                console.error('Error loading example:', req.statusText);
+              }
+            };
+            req.onerror = function() {
+              console.error('Network error loading example');
+            };
+            req.send();
+          }
+        }
+        
+        // Initialize metronome with default state (hidden)
+        const metronome = document.getElementById('metronome');
+        if (metronome) {
+          // Set initial state - hidden when no music is playing
+          metronome.style.opacity = '0';
+          
+          // Subscribe to Clock start/stop events
+          if (window.Gibber) {
+            // When music starts
+            window.Gibber.subscribe('Clock.start', () => {
+              metronome.style.opacity = '1';
+            });
+            
+            // When music stops or is cleared
+            window.Gibber.subscribe('Clock.stop', () => {
+              metronome.style.opacity = '0';
+            });
+            
+            window.Gibber.subscribe('clear', () => {
+              metronome.style.opacity = '0';
+            });
+            
+            // Also hook into Play/Stop button actions
+            const playButton = document.getElementById('play-button');
+            if (playButton) {
+              playButton.addEventListener('click', () => {
+                if (playButton.classList.contains('running')) {
+                  // Music is playing
+                  metronome.style.opacity = '1';
+                } else {
+                  // Music stopped
+                  metronome.style.opacity = '0';
+                }
+              });
+            }
+          }
+        }
+      });
+    </script>
+    
+    <!-- Instrument buttons script -->
+    <script>
+      // Simplified instrument buttons script
+      window.addEventListener('load', () => {
+        // Wait for Gibber to initialize
+        const waitForEditor = setInterval(() => {
+          let editor;
+          
+          // Try various ways to find the editor instance
+          if (window.Gibber && window.Gibber.Environment) {
+            if (window.Gibber.Environment.codeEditor) {
+              editor = window.Gibber.Environment.codeEditor;
+            } else if (window.Gibber.Environment.cm) {
+              editor = window.Gibber.Environment.cm;
+            }
+          }
+          
+          // If no editor found via Gibber, try DOM
+          if (!editor) {
+            const cmElements = document.getElementsByClassName('CodeMirror');
+            if (cmElements.length > 0 && cmElements[0].CodeMirror) {
+              editor = cmElements[0].CodeMirror;
+            }
+          }
+          
+          // If editor found, set up buttons and clear interval
+          if (editor) {
+            clearInterval(waitForEditor);
+            setupInstrumentButtons(editor);
+            console.log('Editor found and instrument buttons attached');
+          }
+        }, 500);
+        
+        // Function to set up the instrument buttons
+        function setupInstrumentButtons(editor) {
+          const buttonsContainer = document.getElementById('instrument-buttons');
+          
+          if (!buttonsContainer) {
+            console.error('Instrument buttons container not found');
+            return;
+          }
+          
+          // Hide the buttons initially
+          buttonsContainer.style.display = 'none';
+          
+          // Function to position buttons at the beginning of empty lines
+          function updateButtonsVisibility() {
+            const cursor = editor.getCursor();
+            const line = editor.getLine(cursor.line) || '';
+            const cursorAtBeginning = cursor.ch === 0;
+            
+            if (cursorAtBeginning) {
+              // Show buttons only at beginning of line
+              const cursorCoords = editor.cursorCoords(true);
+              
+              // Position to the left of the cursor
+              buttonsContainer.style.position = 'absolute';
+              buttonsContainer.style.top = `${cursorCoords.top}px`;
+              buttonsContainer.style.left = `${cursorCoords.left - 150}px`; // Position to the left
+              buttonsContainer.style.display = 'flex';
+              buttonsContainer.style.zIndex = '9999';
+            } else {
+              // Hide buttons when not at beginning of line
+              buttonsContainer.style.display = 'none';
+            }
+          }
+          
+          // Update button visibility when cursor moves
+          editor.on('cursorActivity', updateButtonsVisibility);
+          
+          // Update on editor focus
+          editor.on('focus', updateButtonsVisibility);
+          
+          // Add click handlers to buttons
+          const buttons = document.querySelectorAll('.instrument-button');
+          buttons.forEach(button => {
+            button.addEventListener('click', (e) => {
+              try {
+                // Get the snippet from the button
+                const snippet = button.getAttribute('data-snippet');
+                console.log('Inserting snippet:', snippet);
+                
+                // Get cursor position
+                const cursor = editor.getCursor();
+                
+                // Insert snippet at cursor
+                editor.replaceRange(snippet + '\n', cursor);
+                
+                // Move cursor to the end of the snippet
+                const lines = snippet.split('\n');
+                editor.setCursor({
+                  line: cursor.line + lines.length,
+                  ch: 0
+                });
+                
+                // Focus editor
+                editor.focus();
+                
+                // Hide buttons after insertion
+                buttonsContainer.style.display = 'none';
+              } catch (error) {
+                console.error('Error inserting instrument snippet:', error);
+              }
+            });
+          });
+          
+          // Initial check
+          updateButtonsVisibility();
+        }
+      });
+    </script>
+
+    <script>
+      // Wait for Gibber to be fully initialized
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          if (window.Gibber && window.Gibber.Environment) {
+            // Get editor instance
+            const editor = window.Gibber.Environment.codeEditor || 
+                          window.Gibber.Environment.cm || 
+                          (document.querySelector('.CodeMirror') && document.querySelector('.CodeMirror').CodeMirror);
+            
+            if (editor) {
+              // Get current content
+              let content = editor.getValue();
+              
+              // Remove any line containing "PBM" definition
+              content = content.split('\n')
+                        .filter(line => !line.trim().startsWith('PBM'))
+                        .join('\n');
+              
+              // Set the content back to the editor
+              editor.setValue(content);
+              
+              console.log("Removed PBM definition if it existed");
+            } else {
+              console.error("Couldn't find editor instance");
+            }
+          } else {
+            console.error("Gibber Environment not available");
+          }
+        }, 1000); // Give it a second to fully initialize
+      });
+    </script>
+
+    <script>
+      // BPM Controls and Clear Button Functionality
+      window.addEventListener('load', () => {
+        // Wait for Gibber to initialize
+        const waitForGibber = setInterval(() => {
+          if (window.Gibber && window.Gibber.Audio && window.Gibber.Audio.Clock) {
+            clearInterval(waitForGibber);
+            initializeBpmAndClearControls();
+            setupIconSelector(); // Initialize icon selector as well
+          }
+        }, 200);
+        
+        function initializeBpmAndClearControls() {
+          console.log('Initializing BPM and Clear controls...');
+          
+          // Get references to the controls
+          const bpmValue = document.getElementById('bpm-value');
+          const bpmDecrease = document.getElementById('bpm-decrease');
+          const bpmIncrease = document.getElementById('bpm-increase');
+          const playButton = document.getElementById('play-button');
+          const clearButton = document.getElementById('clear-button');
+          
+          // Get editor instance
+          const editor = window.Gibber.Environment && (
+            window.Gibber.Environment.codeEditor || 
+            window.Gibber.Environment.cm || 
+            (document.querySelector('.CodeMirror') && document.querySelector('.CodeMirror').CodeMirror)
+          );
+          
+          // Initialize with current BPM
+          const currentBpm = window.Gibber.Audio.Clock.bpm || 130;
+          bpmValue.value = currentBpm;
+          
+          // Decrement BPM function
+          bpmDecrease.addEventListener('click', () => {
+            const currentValue = parseInt(bpmValue.value);
+            if (currentValue > parseInt(bpmValue.min)) {
+              const newBpm = currentValue - 1;
+              bpmValue.value = newBpm;
+              updateBpm(newBpm);
+            }
+          });
+          
+          // Increment BPM function
+          bpmIncrease.addEventListener('click', () => {
+            const currentValue = parseInt(bpmValue.value);
+            if (currentValue < parseInt(bpmValue.max)) {
+              const newBpm = currentValue + 1;
+              bpmValue.value = newBpm;
+              updateBpm(newBpm);
+            }
+          });
+          
+          // Manual BPM input
+          bpmValue.addEventListener('change', (e) => {
+            const newBpm = parseInt(e.target.value);
+            if (!isNaN(newBpm) && newBpm >= parseInt(bpmValue.min) && newBpm <= parseInt(bpmValue.max)) {
+              updateBpm(newBpm);
+            }
+          });
+          
+          // Update BPM in Gibber
+          function updateBpm(bpm) {
+            try {
+              // Update Gibber's Clock.bpm
+              window.Gibber.Audio.Clock.bpm = bpm;
+              
+              // Insert/update BPM in the editor if editor is available
+              if (editor) {
+                const content = editor.getValue();
+                const lines = content.split('\n');
+                
+                // Check if there's already a Clock.bpm line
+                let bpmLineFound = false;
+                for (let i = 0; i < lines.length; i++) {
+                  if (lines[i].trim().startsWith('Clock.bpm')) {
+                    lines[i] = `Clock.bpm = ${bpm}`;
+                    bpmLineFound = true;
+                    break;
+                  }
+                }
+                
+                // Don't automatically insert BPM in the editor, just update it
+                // if it already exists
+                if (bpmLineFound) {
+                  editor.setValue(lines.join('\n'));
+                }
+                
+                console.log(`BPM updated to ${bpm}`);
+              }
+            } catch (err) {
+              console.error('Error updating BPM:', err);
+            }
+          }
+          
+          // Play All button functionality
+          let isPlaying = false;
+          const playIcon = document.getElementById('play-icon');
+          const pauseIcon = document.getElementById('pause-icon');
+          const buttonText = playButton.querySelector('.button-text');
+          
+          playButton.addEventListener('click', () => {
+            if (!isPlaying) {
+              console.log('Running all code in editor');
+              try {
+                if (editor) {
+                  // Use the same method that Alt+Enter uses to run all code
+                  window.Gibber.Environment.runCode(editor, true, true);
+                  
+                  // Update button state to "Stop"
+                  playIcon.classList.add('hidden');
+                  pauseIcon.classList.remove('hidden');
+                  buttonText.textContent = 'Stop';
+                  playButton.classList.add('running');
+                  isPlaying = true;
+                }
+              } catch (err) {
+                console.error('Error running code:', err);
+              }
+            } else {
+              console.log('Stopping all sounds');
+              try {
+                // Stop all sounds but don't clear the editor
+                window.Gibber.clear();
+                
+                // Reset button state to "Play All"
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                buttonText.textContent = 'Play All';
+                playButton.classList.remove('running');
+                isPlaying = false;
+              } catch (err) {
+                console.error('Error stopping sounds:', err);
+              }
+            }
+          });
+          
+          // Clear button functionality
+          clearButton.addEventListener('click', () => {
+            try {
+              // Clear all sounds
+              window.Gibber.clear();
+              
+              // Reset Play button state if it was playing
+              if (isPlaying) {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                buttonText.textContent = 'Play All';
+                playButton.classList.remove('running');
+                isPlaying = false;
+              }
+              
+              console.log('All sounds cleared');
+              
+              // Don't clear the editor content - just stop the sounds
+            } catch (err) {
+              console.error('Error clearing sounds:', err);
+            }
+          });
+          
+          // Listen for Gibber clear events to update button state
+          if (window.Gibber) {
+            window.Gibber.subscribe('clear', () => {
+              // Reset Play button state if it was playing
+              if (isPlaying) {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                buttonText.textContent = 'Play All';
+                playButton.classList.remove('running');
+                isPlaying = false;
+                console.log('Play button reset due to external clear event');
+              }
+            });
+          }
+        }
+        
+        // Icon Selector Functionality
+        function setupIconSelector() {
+          console.log('Setting up icon selector...');
+          
+          // Get references to each icon
+          const databaseIcon = document.querySelector('.database-icon').parentElement;
+          const gridIcon = document.querySelector('.grid-icon').parentElement;
+          const dotsIcon = document.querySelector('.dots-icon').parentElement;
+          const randomIcon = document.querySelector('.random-icon').parentElement;
+          
+          // Get editor instance
+          const editor = window.Gibber.Environment && (
+            window.Gibber.Environment.codeEditor || 
+            window.Gibber.Environment.cm || 
+            (document.querySelector('.CodeMirror') && document.querySelector('.CodeMirror').CodeMirror)
+          );
+          
+          // Database icon - Show presets/samples
+          databaseIcon.addEventListener('click', () => {
+            console.log('Database icon clicked - Show presets/samples');
+            // This could show a modal with sample libraries or presets
+            if (window.Gibber.Environment) {
+              // Trigger examples menu if available
+              const examplesMenu = document.getElementById('examplesMenu');
+              if (examplesMenu) {
+                examplesMenu.click();
+              }
+            }
+          });
+          
+          // Grid icon - Generate a structured pattern
+          gridIcon.addEventListener('click', () => {
+            console.log('Grid icon clicked - Generate structured pattern');
+            if (editor) {
+              const structuredCode = `// === Structured Pattern ===
+drums = Drums()
+drums.tidal('kd(3,8), sd(5,8,1), hh*4')
+drums.gain = 0.9`;
+              insertAtCursor(editor, structuredCode);
+            }
+          });
+          
+          // Dots icon - Generate a complex pattern
+          dotsIcon.addEventListener('click', () => {
+            console.log('Dots icon clicked - Generate complex pattern');
+            if (editor) {
+              const complexCode = `// === Complex Pattern ===
+perc = FM({ feedback:0.1, decay:1/4 })
+perc.note.seq(Euclid(5,8), 1/8)`;
+              insertAtCursor(editor, complexCode);
+            }
+          });
+          
+          // Random icon - Generate random patterns
+          randomIcon.addEventListener('click', () => {
+            console.log('Random icon clicked - Generate random pattern');
+            if (editor) {
+              const randomCode = `// === Random Pattern ===
+synth = Mono('bass.hollow')
+synth.note.seq(() => {
+  return rndi(-7, 12)
+}, 1/8)`;
+              insertAtCursor(editor, randomCode);
+            }
+          });
+          
+          // Helper function to insert code at cursor position
+          function insertAtCursor(editor, code) {
+            const cursor = editor.getCursor();
+            editor.replaceRange(code + '\n\n', cursor);
+          }
+        }
+      });
+    </script>
   </body>
 
 </html>

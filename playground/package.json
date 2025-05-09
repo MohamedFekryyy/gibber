@@ -1,0 +1,21 @@
+{
+  "name": "gibber-saas",
+  "version": "1.0.0",
+  "description": "Gibber-as-a-Service: Subscription-based live-coding music platform",
+  "main": "start-server.js",
+  "scripts": {
+    "start": "node start-server.js",
+    "dev": "nodemon start-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "author": "",
+  "license": "MIT"
+} 

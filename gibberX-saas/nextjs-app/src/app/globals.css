@@ -1,0 +1,186 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Override Tailwind with Gibber styles */
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-rgb: 20, 20, 20;
+  --f-high: #ffffff;
+  --f-med: #cccccc;
+  --f-low: #666666;
+  --f-inv: #000000;
+  --b-high: #333333;
+  --b-med: #222222;
+  --b-low: #111111;
+  --b-inv: #eeeeee;
+  --background: #131313;
+}
+
+html {
+  height: 100%;
+}
+
+body { 
+  height: 100% !important;
+  margin: 0 !important;
+  color: #ddd !important;
+  background: var(--background) !important;
+  font-family: Helvetica Neue, sans-serif !important;
+  box-sizing: border-box !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 9px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 15px;
+  border: transparent;
+}
+
+/* Original Gibber Styles - using !important to override Tailwind */
+header { 
+  position: relative !important;
+  top: 0 !important; 
+  left: 0 !important;
+  width: 100% !important; 
+  height: 2.5em !important; 
+  border-bottom: 1px solid var(--f-med) !important;
+  padding-left: 1em !important;
+  box-sizing: border-box !important;
+  z-index: 1 !important;
+}
+
+h1 {
+  font-size: 1em !important;
+  font-weight: normal !important;
+  display: inline-block !important;
+  margin: 0 !important;
+  color: var(--f-high) !important;
+}
+
+#metronome {
+  z-index: 1 !important;
+  position: absolute !important;
+}
+
+#graphics, main {
+  width: 100% !important;
+  height: 100% !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+select { 
+  width: 15em !important;
+  display: inline-block !important;
+  background: transparent !important;
+  color: var(--f-med) !important;
+  border-radius: 0px !important;
+  border-color: var(--f-med) !important; 
+  margin-left: 3em !important;
+}
+
+button {
+  background: transparent !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: var(--f-med) !important;
+  color: var(--f-med) !important;
+  font-family: Helvetica Neue, sans-serif !important;
+}
+
+#themer {
+  width: 4em !important;
+  height: 1.5em !important;
+  position: relative !important;
+  top: .5em !important;
+  object-fit: cover !important;
+}
+
+#reference {
+  position: absolute !important;
+  right: 3em !important;
+  top: .15em !important;
+}
+
+#reference a { 
+  color: var(--f-med) !important; 
+  margin-left: 1em !important; 
+}
+
+#reference ul {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+}
+
+#reference li {
+  display: inline !important;
+  margin-right: 0.5em !important;
+  white-space: nowrap !important;
+}
+
+#editor { 
+  width: 100% !important; 
+  box-sizing: border-box !important; 
+  display: inline-block !important; 
+  position: relative !important;
+  top: 0px !important;
+  left: 0px !important;
+  height: calc(100% - 3em) !important;
+  padding-left: 1em !important;  
+  z-index: 1 !important;
+}
+
+#hidebtn { 
+  cursor: pointer !important;
+  border-style: none !important;
+  position: absolute !important;
+  right: .5em !important;
+  top: 1em !important;
+  color: var(--f-med) !important;
+  z-index: 1 !important;
+  display: none !important;
+}
+#hidebtn:focus { outline: 0 !important; }
+
+/* CodeMirror customizations */
+.CodeMirror {
+  height: 100% !important;
+  font-family: Menlo, monospace !important;
+  font-size: 1em !important;
+  line-height: 1.25em !important;
+  background: transparent !important;
+}
+
+.CodeMirror-cursor {
+  border-left: 1px solid var(--f-med) !important;
+}
+
+.CodeMirror-highlight {
+  background: rgba(255,255,255,.2) !important;
+}
+
+/* Fix for theme compatibility */
+.CodeMirror pre {
+  line-height: 1.25em !important;
+  float: left !important;
+  clear: left !important;
+  font-family: Menlo, monospace !important;
+}
+
+.CodeMirror-activeline-background {
+  background: rgba(255,255,255,.2) !important;
+}
+
+.CodeMirror-line {
+  padding-left: 0 !important;
+}

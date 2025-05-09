@@ -52,7 +52,7 @@ code {
   float:left !important;
   clear:left !important;
 
-  font-family:Menlo, monospace !important;
+  font-family:'IBM Plex Sans', Menlo, monospace !important;
 }
 @media only screen and (max-width: 950px) {
   #reference { display:none } 
@@ -63,6 +63,7 @@ code {
 @media only screen and (max-width: 400px) {
   #themer { display:none } 
   header { padding-top:.55em }
+  footer { padding-top:.55em }
 }
 @media only screen and (max-width: 335px) {
   #examplesMenu { display:none } 
@@ -81,12 +82,15 @@ code {
 html { height: 100% }
 
 body { 
-  height:100%; /* needed for calls to calc() in child elements */
+  height: 100%; /* needed for calls to calc() in child elements */
   margin: 0;
-  color:#ddd;
+  color: #ddd;
   font-family: Helvetica Neue, sans-serif;
-  background:var(--background);
-  box-sizing:border-box !important;
+  background: var(--background);
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 ::-webkit-scrollbar {
@@ -133,13 +137,17 @@ button, input {
 }
 
 #hidebtn { 
-  cursor:pointer;
-  border-style:none !important;
-  position:absolute;
-  right:.5em;
-  top:1em;
-  color:var(--f_med);
-  z-index:1;
+  cursor: pointer;
+  border-style: none !important;
+  position: fixed;
+  right: 10px;
+  top: 10px;
+  color: var(--f_med);
+  z-index: 20;
+  font-size: 12px;
+  padding: 2px 8px;
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 4px;
 }
 #hidebtn:focus { outline:0; }
 
@@ -162,22 +170,78 @@ label {
 #showChat, #useSharedEditorBox { width:1em; margin-left:.5em; display:inline }
 
 #graphics, main, .graphics {
-  width:100%;
-  height:100%;
-  position:fixed;
-  top:0;
-  left:0;
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0; /* Ensure it stays behind the editor */
 }
 
 header { 
-  position:relative;
-  top:0; left:0;
-  width:100%; 
-  height:2.5em; 
-  border-bottom:1px solid var(--f_med);
-  padding-left:1em;
-  box-sizing:border-box;
-  z-index:1;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; 
+  height: 2.5em; 
+  border-bottom: none;
+  padding-left: 1em;
+  box-sizing: border-box;
+  z-index: 10; /* Higher z-index to stay on top */
+  background: transparent;
+}
+
+/* Pill-shaped footer toolbar styles */
+footer#main-toolbar { 
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: 2em; 
+  padding: 0 1em;
+  box-sizing: border-box;
+  z-index: 20; /* Ensure it's above other elements */
+  background: var(--background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 20px;
+  border: 1px solid var(--f_med);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+footer#main-toolbar button,
+footer#main-toolbar select {
+  margin: 0 2px;
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+/* Dimmed button style */
+.dim-button {
+  opacity: 0.6;
+  font-size: 11px !important;
+  color: var(--f_low) !important;
+  border-color: var(--f_low) !important;
+  transition: opacity 0.2s ease;
+}
+
+.dim-button:hover {
+  opacity: 0.9;
+}
+
+#gibber-user-menu {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#gibber-login-button, 
+#gibber-logout-button {
+  border-radius: 15px;
+  padding: 3px 12px;
 }
 
 select{ 
@@ -202,8 +266,24 @@ h1 {
 }
 
 #metronome {
-  z-index:1;
-  position:absolute;
+  z-index: 10;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 0 0 25px 25px;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+  height: 6px !important;
+  transition: all 0.3s ease;
+  width: 50% !important; /* Ensure width is consistent */
+  max-width: 960px; /* Match the editor max-width */
+}
+
+/* Add an active state for when the metronome is active */
+#metronome.active {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+  height: 8px !important;
 }
 
 #stats {
@@ -213,32 +293,38 @@ h1 {
   color:#aaa;
   font-size:.85em;
   position:fixed;
-  bottom:0;
+  bottom:2.5em;
   z-index:2
 }
 
 header span { font-size: .8em; }
 
 #editor { 
-  width:100%; 
-  box-sizing:border-box; 
-  display:inline-block; 
-  position:relative;
-  top:0px;
-  left:0px;
-  height:calc( 100% - 3em); /*border-right:1px solid #666;*/ 
-  padding-left:1em;  
-  z-index:1
+  width: 100%;
+  max-width: 960px; /* Limit max width to 960px */
+  box-sizing: border-box; 
+  display: block; /* Block for proper centering */
+  position: relative;
+  height: calc(100% - 2.5em);
+  padding-left: 1em;
+  padding-right: 1em; /* Add right padding for balance */
+  z-index: 1;
+  margin: 120px auto 0; /* Center horizontally with 120px top margin */
 }
-#console{ width:40%; box-sizing:border-box; display:inline-block; position:absolute; height:calc( 100% - 3em ); }
+
+/* Additional adjustment to ensure proper sizing of CodeMirror */
+.CodeMirror-scroll {
+  min-height: calc(100vh - 280px); /* Account for top margin and other elements */
+}
+
+#console{ width:40%; box-sizing:border-box; display:inline-block; position:absolute; height:calc(100% - 2.5em); }
 
 .dg { z-index:100 !important }
 
 #reference {
-  position:absolute;
-  right:3em;
-  top:.15em;
+  display: none;
 }
+
 #reference a { 
   color: var(--f_med) !important; 
   margin-left: 1em 
@@ -258,9 +344,11 @@ header span { font-size: .8em; }
 }
 
 .CodeMirror {
-  font-family:Menlo, monospace;
-  font-size:.8em;
-  background:transparent;
+  font-family: 'IBM Plex Sans', Menlo, monospace;
+  font-size: 1em;
+  background: transparent;
+  width: 100%; /* Ensure it fills the editor container */
+  height: 100% !important; /* Ensure it fills the editor container */
 }
 
 /*span.cm-comment { color:rgb(121,121,121) !important }*/
@@ -597,7 +685,7 @@ span.tidalblock {
   height:100%;
   margin:0;
   display: block;
-  font-family: 'Menlo', 'Source Code Pro', monospace;
+  font-family: 'IBM Plex Sans', 'Menlo', 'Source Code Pro', monospace;
   list-style: none;
   box-sizing:border;
   padding:0;
@@ -663,4 +751,12 @@ label { margin-bottom:5px; }
 #help p { max-width: 24em; margin-top:0 }
 
 .demos { padding-left:0 }
+
+/* Style for the centered editor container */
+#editor::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 

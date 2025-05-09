@@ -40,6 +40,19 @@ window.onload = function() {
   environment.userReady = false;
   environment.usageStartTime = Date.now();
   
+  // Check if auth is available and ready
+  if (window.GibberAuth && typeof window.GibberAuth.isReady === 'function') {
+    const checkAuthReady = setInterval(() => {
+      if (window.GibberAuth.isReady()) {
+        clearInterval(checkAuthReady);
+        environment.user = window.GibberAuth.getUser();
+        environment.userReady = true;
+        console.log('Auth state initialized:', environment.user ? 'Logged in' : 'Not logged in');
+      }
+    }, 100);
+  }
+
+
   environment.share = Share
 
   const workletPath = './gibberish_worklet.js' 
